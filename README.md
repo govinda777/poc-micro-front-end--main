@@ -421,6 +421,124 @@ docker-compose up -d
 - Fluxos de dados
 - Guias de integração
 
+----
+
+Webpack 5 e Module Federation
+
+Webpack 5 é uma das mais populares ferramentas de bundling para aplicações web modernas. Lançado com várias melhorias significativas, uma de suas funcionalidades mais inovadoras é o Module Federation, que permite compartilhar e consumir módulos entre diferentes aplicações de forma nativa e dinâmica.
+
+Webpack 5: Principais Características
+
+Webpack 5 introduziu melhorias em diversas áreas:
+	1.	Melhoria de Performance:
+	•	Caching aprimorado, especialmente no filesystem cache, tornando o processo de build mais rápido.
+	•	Uso otimizado de assets e módulos para builds menores.
+	2.	Tree Shaking Avançado:
+	•	Melhor suporte para eliminar código morto, inclusive para CommonJS, melhorando o desempenho em aplicações maiores.
+	3.	Persistent Caching:
+	•	Cache persistente em disco para builds subsequentes mais rápidos.
+	4.	Assets Management:
+	•	Suporte aprimorado para lidar com arquivos estáticos, como imagens e fontes, diretamente no JavaScript.
+	5.	Module Federation:
+	•	O maior destaque, permitindo aplicações micro frontends.
+
+O Que é Module Federation?
+
+Module Federation é uma funcionalidade introduzida no Webpack 5 que permite compartilhar módulos entre diferentes aplicações de maneira dinâmica e independente, sem necessidade de acoplamento rígido ou recompilações. Ele é amplamente utilizado em arquiteturas de Micro Frontends.
+
+Por que é importante?
+	•	Resolve o problema de compartilhamento de dependências em múltiplas aplicações.
+	•	Permite que equipes desenvolvam partes da aplicação de forma independente.
+	•	Reduz o tempo de build e deploy, já que as partes independentes não precisam ser empacotadas juntas.
+
+Funcionamento Básico do Module Federation
+
+A configuração é feita no arquivo webpack.config.js usando o plugin ModuleFederationPlugin. Ele permite que uma aplicação seja configurada como:
+	1.	Host: A aplicação principal que consome módulos de outras aplicações.
+	2.	Remote: A aplicação que expõe seus módulos para o host.
+
+Exemplo de Configuração
+
+Host Application (host-app)
+
+// webpack.config.js
+const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+
+module.exports = {
+  mode: "development",
+  output: {
+    publicPath: "http://localhost:3000/",
+  },
+  plugins: [
+    new ModuleFederationPlugin({
+      name: "hostApp",
+      remotes: {
+        remoteApp: "remoteApp@http://localhost:3001/remoteEntry.js",
+      },
+    }),
+  ],
+};
+
+Remote Application (remote-app)
+
+// webpack.config.js
+const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+
+module.exports = {
+  mode: "development",
+  output: {
+    publicPath: "http://localhost:3001/",
+  },
+  plugins: [
+    new ModuleFederationPlugin({
+      name: "remoteApp",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./Button": "./src/Button", // Expondo o componente Button
+      },
+    }),
+  ],
+};
+
+Consumo do Módulo no Host
+
+import React from "react";
+import ReactDOM from "react-dom";
+
+// Importação dinâmica do módulo remoto
+const RemoteButton = React.lazy(() => import("remoteApp/Button"));
+
+const App = () => (
+  <div>
+    <h1>Host App</h1>
+    <React.Suspense fallback="Loading...">
+      <RemoteButton />
+    </React.Suspense>
+  </div>
+);
+
+ReactDOM.render(<App />, document.getElementById("root"));
+
+Vantagens do Module Federation
+	1.	Desacoplamento:
+	•	Permite que diferentes partes de um sistema sejam desenvolvidas, versionadas e implantadas separadamente.
+	2.	Reutilização de Código:
+	•	Compartilhamento eficiente de bibliotecas e componentes sem redundância.
+	3.	Performance Melhorada:
+	•	Aplicações baixam apenas os módulos necessários, reduzindo o tempo de carregamento.
+	4.	Arquitetura Escalável:
+	•	Suporta a implementação de micro frontends e facilita a colaboração entre equipes.
+
+Casos de Uso Comuns
+	1.	Micro Frontends:
+	•	Múltiplas equipes trabalhando em diferentes partes da aplicação.
+	2.	Aplicações Legadas:
+	•	Integração de novos recursos em aplicações existentes.
+	3.	Design Systems Compartilhados:
+	•	Reutilização de bibliotecas de UI sem redundância.
+
+
+
 ## Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
