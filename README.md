@@ -6,185 +6,149 @@ Este é um projeto de prova de conceito (POC) para implementação de uma arquit
 
 O projeto demonstra uma implementação de Micro Front-ends com um aplicativo principal (main) que orquestra múltiplos aplicativos auxiliares (slaves). Esta arquitetura permite o desenvolvimento independente de diferentes partes da aplicação, mantendo a coesão e facilitando a manutenção.
 
-## Estrutura do Projeto
+## Estrutura e Arquitetura de Cada Projeto
 
-### Projetos:
-- **poc-micro-front-end--main** (Aplicação Principal)
-- **poc-micro-front-end--proxy** (Camada Proxy)
-- **poc-micro-front-end--slave1** (Micro Front-end 1)
-- **poc-micro-front-end--slave2** (Micro Front-end 2)
+### Aplicativo Principal: poc-micro-front-end--main
 
-### Aplicação Principal: poc-micro-front-end--main
+#### Responsabilidades:
+- Gerenciamento de autenticação centralizada.
+- Orquestração dos Micro Front-ends.
+- Gerenciamento de estado global.
+- Roteamento principal.
+- Interface base, incluindo menus e layout.
 
-Responsável pela orquestração e gerenciamento dos Micro Front-ends.
+#### Componentes Principais:
+```
+/src
+├── /auth
+│   ├── AuthProvider.tsx       # Contexto de autenticação.
+│   ├── AuthGuard.tsx          # Proteção de rotas.
+│   └── useAuth.tsx            # Hook de autenticação.
+│
+├── /core
+│   ├── EventBus.ts            # Sistema de eventos.
+│   ├── StateManager.ts        # Gerenciador de estado.
+│   └── ModuleFederation.ts    # Configuração de Module Federation.
+│
+├── /layout
+│   ├── MainLayout.tsx         # Layout principal.
+│   ├── Header.tsx             # Cabeçalho com comboboxes.
+│   └── Sidebar.tsx            # Menu lateral.
+│
+└── /shared
+    ├── /components            # Componentes compartilhados.
+    ├── /hooks                 # Hooks customizados.
+    └── /utils                 # Utilitários.
+```
 
-#### Funcionalidades Principais:
+#### Funcionalidades:
+- **Autenticação**: Gerenciamento de login, tokens e controle de sessão.
+- **Interface Principal**: Cabeçalho com comboboxes, menu lateral e área de conteúdo dinâmico.
+- **Gerenciamento de Micro Front-ends**: Carregamento dinâmico e comunicação via sistema de eventos.
+- **Gestão de Dependências**: Bibliotecas compartilhadas e resolução de conflitos de versões.
 
-- **Autenticação**
-  - Gerenciamento completo do processo de autenticação.
-  - Controle de sessão do usuário.
+### Micro Front-ends: poc-micro-front-end--slave1 e poc-micro-front-end--slave2
 
-- **Interface Principal**
-  - Menu superior com 2 Combo boxes.
-  - Menu lateral esquerdo para navegação entre Micro Front-ends.
-  - Área de conteúdo dinâmico para carregamento dos Micro Front-ends.
+#### Estrutura Comum:
+```
+/src
+├── /components             # Componentes específicos do Micro Front-end.
+├── /hooks                  # Hooks específicos.
+├── /services               # Serviços específicos.
+└── bootstrap.tsx           # Ponto de entrada.
+```
 
-- **Gerenciamento de Micro Front-ends**
-  - Orquestração do carregamento dinâmico.
-  - Gerenciamento de dados necessários para cada Micro Front-end.
-  - Sistema de eventos para comunicação com os Micro Front-ends.
-  - Controle de versões de dependências.
-
-- **Gestão de Dependências**
-  - Gerenciamento centralizado de bibliotecas compartilhadas.
-  - Sistema de resolução de conflitos de versões.
-  - Mecanismo para lidar com incompatibilidades entre versões.
+#### Características:
+- Integração com o sistema de autenticação e sessão do aplicativo principal.
+- Consumo de eventos emitidos pelo aplicativo principal.
+- Independência no desenvolvimento e deploy.
 
 ### Camada Proxy: poc-micro-front-end--proxy
 
-Atua como middleware entre o frontend e o backend, com funcionalidades como:
+#### Responsabilidades:
 - Roteamento de requisições.
 - Cache e balanceamento de carga.
-- Tratamento de erros e interceptadores de autenticação.
+- Autenticação e interceptadores de erros.
 
-### Aplicações Auxiliares: poc-micro-front-end--slave1 e poc-micro-front-end--slave2
+#### Estrutura do Proxy:
+```
+/proxy
+├── /adapters                # Adaptadores para APIs.
+├── /cache                   # Gerenciamento de cache.
+├── /interceptors            # Interceptadores de requisição.
+├── /queue                   # Sistema de filas.
+└── /error-handling          # Tratamento de erros.
+```
 
-#### Características:
-- Acesso aos dados de autenticação.
-- Consumo dos dados de sessão do usuário.
-- Integração com o sistema de eventos da aplicação principal.
-- Independência no desenvolvimento e deploy.
+#### Componentes:
+1. **Gateway API**: Responsável pelo roteamento e log centralizado.
+2. **Gerenciamento de Cache**: Implementação de estratégias como `in-memory` e Redis.
+3. **Interceptadores**: Manipula cabeçalhos, tokens e autenticação.
+4. **Circuit Breaker**: Gerencia falhas e previne sobrecarga.
+
+### Backend Layer (Camada de Backend)
+- APIs REST independentes.
+- Comunicação via proxy.
+- Gerenciamento de autenticação e dados.
+
+## Fluxos de Comunicação
+
+1. **Autenticação**: O container principal gerencia tokens e distribui para os Micro Front-ends.
+2. **Dados**: O proxy verifica cache antes de encaminhar para o backend.
+3. **Comunicação Entre Módulos**: Utiliza um sistema de eventos baseado em `EventBus` para sincronização.
 
 ---
 
-## Comunicação entre Módulos
+## Diagrama Geral da Arquitetura
+```mermaid
+graph TD
+    MainApp[Main Application]
+    Proxy[Proxy Layer]
+    Backend[Backend Layer]
 
-### Eventos do Sistema
-
-A aplicação principal emite eventos para os Micro Front-ends nos seguintes casos:
-- Alterações nos Combo boxes do menu superior.
-- Atualizações no estado de autenticação.
-- Modificações nos dados de sessão.
-
-### Fluxo de Dados
-
-```
-Main App
-  ├── Gerenciamento de Autenticação
-  ├── Controle de Sessão
-  ├── Sistema de Eventos
-  └── Micro Front-ends
-      ├── Slave 1
-      └── Slave 2
+    MainApp --> Proxy --> Backend
+    MainApp --> Slave1[Micro Front-end 1]
+    MainApp --> Slave2[Micro Front-end 2]
 ```
 
----
-
-## Requisitos Técnicos
-
-- Node.js (versão LTS mais recente).
-- React.
-- Gerenciador de pacotes (npm/yarn).
-
-## Como Executar
+## Desenvolvimento
 
 1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/poc-micro-front-end.git
-   ```
-
-2. Instale as dependências em cada projeto:
-   ```bash
-   cd poc-micro-front-end--main
-   npm install
-
-   cd ../poc-micro-front-end--proxy
-   npm install
-
-   cd ../poc-micro-front-end--slave1
-   npm install
-
-   cd ../poc-micro-front-end--slave2
-   npm install
-   ```
-
-3. Execute os projetos:
-   ```bash
-   # Em terminais separados:
-   cd poc-micro-front-end--main
-   npm start
-
-   cd poc-micro-front-end--proxy
-   npm start
-
-   cd ../poc-micro-front-end--slave1
-   npm start
-
-   cd ../poc-micro-front-end--slave2
-   npm start
-   ```
-
-## Processo de CI/CD
-
-### Overview
-
-Para gerenciar e automatizar o deploy das aplicações, utilizaremos **GitHub Actions** para construção e publicação das aplicações e **GitHub Pages** para hospedagem. O pipeline está configurado para:
-
-1. Executar testes automatizados em cada commit realizado no repositório.
-2. Construir os artefatos de produção (build).
-3. Publicar os artefatos no GitHub Pages para disponibilização online.
-
-### Configuração do GitHub Actions
-
-Cada repositório do projeto possui um arquivo `workflow` no diretório `.github/workflows`. A seguir está um exemplo de configuração para o **poc-micro-front-end--main**:
-
-```yaml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 'lts/*'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Project
-        run: npm run build
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+```bash
+git clone https://github.com/seu-usuario/poc-micro-front-end.git
 ```
 
-### Deploy das Aplicações Auxiliares
+2. Instale as dependências:
+```bash
+cd poc-micro-front-end--main
+npm install
 
-Os workflows para **slave1** e **slave2** seguem a mesma lógica, ajustando o diretório de publicação e os comandos de build conforme necessário. Certifique-se de criar as páginas individuais para cada aplicação no GitHub Pages.
+cd ../poc-micro-front-end--proxy
+npm install
 
-### Estrutura de Hospedagem
+cd ../poc-micro-front-end--slave1
+npm install
 
-- **Main App**: Hospedada na raiz do repositório do GitHub Pages.
-- **Slave 1**: Hospedado em um subdiretório, como `/slave1`.
-- **Slave 2**: Hospedado em um subdiretório, como `/slave2`.
+cd ../poc-micro-front-end--slave2
+npm install
+```
 
-### Considerações
+3. Execute os projetos:
+```bash
+# Em terminais separados
+cd poc-micro-front-end--main
+npm start
 
-- Configure corretamente o `homepage` no `package.json` de cada projeto para refletir o caminho de publicaç
+cd ../poc-micro-front-end--proxy
+npm start
+
+cd ../poc-micro-front-end--slave1
+npm start
+
+cd ../poc-micro-front-end--slave2
+npm start
+```
+
 
 ---
 
