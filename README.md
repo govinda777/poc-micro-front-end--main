@@ -186,3 +186,100 @@ Os workflows para **slave1** e **slave2** seguem a mesma lógica, ajustando o di
 
 - Configure corretamente o `homepage` no `package.json` de cada projeto para refletir o caminho de publicaç
 
+---
+
+## Diagrams
+
+> MF Main arq
+
+```mermaid
+graph TD
+  %% Container Principal - Module Federation
+  subgraph "Container Principal - Module Federation"
+    A[Module Federation Manager]
+    A --> B[Remote Entry 1]
+    A --> C[Remote Entry 2]
+    A --> D[Shared Dependencies]
+  end
+
+  %% UI Components
+  subgraph "UI Components"
+    E[Main Layout]
+    E --> F[Header]
+    E --> G[Sidebar]
+    E --> H[Content Area]
+    F --> I[Combo Box 1]
+    F --> J[Combo Box 2]
+    G --> K[Menu Items]
+    H --> L[MFE Container]
+  end
+
+  %% Core Components
+  subgraph "Core Components"
+    %% Event Bus Details
+    subgraph "Event Bus Details"
+      M[Event Bus]
+      M --> N[Event Registry]
+      M --> O[Event Queue]
+      M --> P[Event Emitter]
+    end
+
+    %% State Manager Details
+    subgraph "State Manager Details"
+      Q[State Manager]
+      Q --> R[Global State]
+      Q --> S[State Sync]
+      Q --> T[State Context]
+    end
+
+    %% Auth Manager Details
+    subgraph "Auth Manager Details"
+      U[Authentication Manager]
+      U --> V[Token Manager]
+      U --> W[Session Storage]
+      U --> X[Auth Context]
+      U --> Y[Router]
+    end
+  end
+```
+
+> MF solution macro
+
+```mermaid
+flowchart TD
+ subgraph subGraph0["Frontend Layer"]
+        C["Container Principal"]
+        B["Main Application"]
+        D["Auth Manager"]
+        E["Router"]
+        F["State Manager"]
+        G["Event Bus"]
+        H["Micro Frontends"]
+        I["Slave 1"]
+        J["Slave 2"]
+  end
+ subgraph subGraph1["Proxy Layer"]
+        L["Cache Manager"]
+        K["API Gateway/Proxy"]
+        M["Auth Interceptor"]
+        N["Circuit Breaker"]
+        O["Request Queue"]
+  end
+ subgraph subGraph2["Backend Layer"]
+        P["API Service 1"]
+        Q["API Service 2"]
+        R["API Service 3"]
+  end
+    A["Browser/Cliente"] --> B
+    B --> C & K
+    C --> D & E & F & G & H
+    H --> I & J
+    K --> L & M & N & O & P & Q & R
+    F -- Comunicação --> G
+    G -- Eventos --> I & J
+    subGraph0 --> n1["Untitled Node"]
+```
+
+
+
+
