@@ -187,6 +187,129 @@ O projeto demonstra uma implementação de Micro Front-ends com um aplicativo pr
 - **Gerenciamento de Micro Front-ends**: Carregamento dinâmico e comunicação via sistema de eventos.
 - **Gestão de Dependências**: Bibliotecas compartilhadas e resolução de conflitos de versões.
 
+## Shared Dependencies
+
+As dependências compartilhadas entre os Micro Front-ends são gerenciadas pelo Webpack Module Federation. O arquivo ModuleFederation.ts é responsável por expor e consumir módulos compartilhados. Isso ajuda a reduzir redundâncias e evitar conflitos de versão.
+
+Aqui está uma nova seção detalhada para descrever como funciona a autenticação na aplicação, incluindo um diagrama de sequência para ilustrar o fluxo:
+
+---
+
+## Fluxo de Autenticação
+
+A autenticação é um processo essencial na aplicação para garantir que apenas usuários autorizados tenham acesso às funcionalidades. O fluxo de autenticação é gerenciado pelo **Container Principal** (Main Application) em conjunto com a **Camada Proxy** e o **Backend**. 
+
+A seguir, detalhamos como funciona o fluxo completo:
+
+---
+
+### **1. Descrição do Fluxo de Autenticação**
+
+1. **Usuário inicia o login**:
+   - O usuário insere suas credenciais (e-mail/senha) na interface de login do **Main Application**.
+
+2. **Envio das credenciais**:
+   - O Main Application envia as credenciais para a **Camada Proxy**.
+
+3. **Validação no Backend**:
+   - O **Proxy** encaminha a solicitação ao serviço de autenticação no **Backend**, que valida as credenciais fornecidas.
+
+4. **Geração de tokens**:
+   - Após a validação, o **Backend** retorna um **access token** (curta duração) e um **refresh token** (longa duração) para o **Proxy**.
+
+5. **Distribuição do token**:
+   - O **Proxy** envia os tokens de volta ao **Main Application**, que os armazena no navegador, geralmente no `localStorage` ou `HttpOnly cookies` para maior segurança.
+
+6. **Acesso autenticado**:
+   - O **Main Application** agora utiliza o **access token** para acessar os **Micro Front-ends** e consumir APIs, enquanto o **Proxy** gerencia a renovação do token automaticamente usando o **refresh token**.
+
+---
+
+### **2. Diagrama de Sequência**
+
+O diagrama abaixo ilustra o fluxo de autenticação:
+
+```mermaid
+sequenceDiagram
+    participant Usuário
+    participant MainApp as Main Application
+    participant Proxy as Proxy
+    participant Backend as Backend
+
+    Usuário->>MainApp: Inserir credenciais (e-mail/senha)
+    MainApp->>Proxy: Envia credenciais (POST /login)
+    Proxy->>Backend: Encaminha credenciais (POST /auth)
+    Backend->>Proxy: Retorna tokens (access e refresh)
+    Proxy->>MainApp: Envia tokens ao cliente
+    MainApp->>Usuário: Sessão ativa (acesso permitido)
+    Usuário->>MainApp: Realiza solicitação autenticada (GET /dados)
+    MainApp->>Proxy: Inclui access token no cabeçalho (Authorization)
+    Proxy->>Backend: Valida token e retorna dados solicitados
+    Backend->>Proxy: Envia resposta (200 OK)
+    Proxy->>MainApp: Dados retornados
+    MainApp->>Usuário: Exibe dados na interface
+```
+
+---
+
+### **3. Considerações Importantes**
+
+- **Tokens Seguros**:
+  - Use `HttpOnly` cookies para armazenar os tokens, evitando ataques XSS.
+  
+- **Renovação do Token**:
+  - O **Proxy** monitora o tempo de expiração do **access token** e usa o **refresh token** para renová-lo automaticamente antes de expirar.
+
+- **Proteção de Rotas**:
+  - O **Main Application** utiliza um **AuthGuard** para proteger as rotas e redirecionar o usuário para a página de login caso ele não esteja autenticado.
+
+- **Erro de Autenticação**:
+  - Caso o **access token** seja inválido ou expire e o **refresh token** também não seja aceito, o usuário será redirecionado para a tela de login.
+
+---
+
+### **4. Exemplo de Código**
+
+#### **Envio de Credenciais**
+
+```javascript
+// Exemplo de envio de credenciais no login
+async function login(email, password) {
+    const response = await fetch('http://proxy-url/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+    });
+
+    if (response.ok) {
+        const { accessToken, refreshToken } = await response.json();
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+    } else {
+        console.error('Erro ao autenticar');
+    }
+}
+```
+
+#### **Proteção de Rotas**
+
+```javascript
+import { Navigate } from 'react-router-dom';
+
+function AuthGuard({ children }) {
+    const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" />;
+    }
+
+    return children;
+}
+```
+
+
 ### Micro Front-ends: poc-micro-front-end--slave1 e poc-micro-front-end--slave2
 
 #### Estrutura Comum:
