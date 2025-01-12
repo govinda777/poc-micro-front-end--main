@@ -96,6 +96,52 @@ flowchart TD
     subGraph0 --> n1["Untitled Node"]
 ```
 
+> MF Slave
+
+```mermaid
+graph TD
+  %% Estrutura de um MF Slave
+  subgraph "Micro Front-end (Slave)"
+    A[Bootstrap.tsx - Ponto de Entrada]
+    A --> B[Components]
+    A --> C[Hooks]
+    A --> D[Services]
+
+    subgraph "Services"
+      D1[API Client]
+      D2[Data Fetching]
+    end
+
+    subgraph "Components"
+      B1[UI Component 1]
+      B2[UI Component 2]
+    end
+
+    subgraph "Hooks"
+      C1[Custom Hook 1]
+      C2[Custom Hook 2]
+    end
+  end
+
+  %% Integração com a aplicação principal
+  A --> MainApp["Main Application"]
+
+  %% Comunicação e Eventos
+  subgraph "Comunicação"
+    MainApp --> EventBus["Event Bus"]
+    EventBus --> A
+    A --> EventBus
+  end
+
+  %% Dados compartilhados
+  subgraph "Dados Compartilhados"
+    MainApp --> AuthData["Autenticação"]
+    MainApp --> GlobalState["Gerenciamento de Estado"]
+    A --> AuthData
+    A --> GlobalState
+  end
+```
+
 ## Visão Geral
 
 O projeto demonstra uma implementação de Micro Front-ends com um aplicativo principal (main) que orquestra múltiplos aplicativos auxiliares (slaves). Esta arquitetura permite o desenvolvimento independente de diferentes partes da aplicação, mantendo a coesão e facilitando a manutenção.
@@ -242,5 +288,77 @@ npm start
 cd ../poc-micro-front-end--slave2
 npm start
 ```
+
+A arquitetura do MF Slave (Micro Frontend Escravo) no contexto da POC Micro Front-end está baseada em conceitos de desacoplamento e modularidade. Seguem os pontos principais da arquitetura descrita nos arquivos:
+
+### Estrutura do MF Slave
+1. **Componentização:**
+   - Cada MF Slave é um módulo independente que implementa suas funcionalidades específicas.
+   - Estrutura típica de diretórios:
+     ```
+     /src
+     ├── /components             # Componentes específicos do Micro Front-end.
+     ├── /hooks                  # Hooks específicos do Micro Front-end.
+     ├── /services               # Serviços específicos, como APIs ou lógica de domínio.
+     └── bootstrap.tsx           # Ponto de entrada do Micro Front-end.
+     ```
+
+2. **Integração com o Main Application:**
+   - Cada MF Slave é carregado dinamicamente pela aplicação principal usando o Module Federation do Webpack 5.
+   - Comunicação via sistema de eventos configurado no Main Application.
+   - A aplicação principal também compartilha dados de autenticação e estado global com os Slaves.
+
+3. **Gerenciamento de Dependências:**
+   - As dependências são resolvidas e compartilhadas entre o Main Application e os Slaves, minimizando redundâncias e conflitos.
+   - Versões são gerenciadas para evitar incompatibilidades.
+
+### Comunicação e Orquestração
+- **Sistema de Eventos:**
+  - Eventos, como alterações em combos ou atualizações no estado de autenticação, são emitidos pelo Main Application e consumidos pelos Slaves.
+  - Exemplo de utilização:
+    ```typescript
+    // No Main Application:
+    eventBus.emit('COMBO_CHANGED', { id: 1, value: 'new' });
+
+    // No MF Slave:
+    eventBus.on('COMBO_CHANGED', (payload) => {
+      console.log('Combo changed', payload);
+    });
+    ```
+
+- **Consumo de Dados:**
+  - Os MF Slaves consomem APIs via camada Proxy configurada no Main Application.
+  - Cache e autenticação são gerenciados no Proxy antes de os dados serem entregues.
+
+### Exemplos de Configuração
+**Module Federation no MF Slave:**
+```javascript
+const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+
+module.exports = {
+  output: {
+    publicPath: "http://localhost:3001/",
+  },
+  plugins: [
+    new ModuleFederationPlugin({
+      name: "slaveApp",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./Component": "./src/components/MyComponent",
+      },
+      shared: ["react", "react-dom"],
+    }),
+  ],
+};
+```
+
+### Características
+1. **Independência:**
+   - Cada MF Slave pode ser desenvolvido, testado e implantado de forma independente.
+2. **Reutilização:**
+   - MF Slaves podem compartilhar componentes e bibliotecas com o Main Application e outros Slaves.
+3. **Escalabilidade:**
+   - A arquitetura permite a adição de novos Slaves sem impacto significativo no restante do sistema.
+
 
 
