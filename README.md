@@ -148,7 +148,11 @@ O projeto demonstra uma implementação de Micro Front-ends com um aplicativo pr
 
 ## Estrutura e Arquitetura de Cada Projeto
 
-### Aplicativo Principal: poc-micro-front-end--main
+* poc-micro-front-end--main (Aplicação Principal)
+* poc-micro-front-end--proxy (Camada Proxy)
+* poc-micro-front-end--slave1 (Micro Front-end 1)
+* poc-micro-front-end--slave2 (Micro Front-end 2)
+
 
 #### Responsabilidades:
 - Gerenciamento de autenticação centralizada.
