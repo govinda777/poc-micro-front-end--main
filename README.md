@@ -362,6 +362,87 @@ function AuthGuard({ children }) {
 
 ---
 
+## Camada Proxy
+
+A **Camada Proxy** centraliza a comunicação entre o **Frontend Layer** e o **Backend Layer**, fornecendo funcionalidades críticas que garantem performance, resiliência e segurança.
+
+### Responsabilidades
+- Roteamento de requisições entre MFEs e APIs backend.
+- Implementação de autenticação centralizada.
+- Gerenciamento de cache para reduzir latência.
+- Manutenção de filas de requisição.
+- Circuit Breaker para prevenir sobrecarga.
+
+### Componentes
+1. **Request Queue:**
+   - Gerencia filas de requisições para evitar congestionamento.
+   - Armazena requisições pendentes em caso de indisponibilidade temporária do backend.
+
+2. **Circuit Breaker:**
+   - Monitora falhas em APIs e bloqueia chamadas subsequentes para pontos de falha repetidos.
+   - Proporciona feedback imediato ao cliente quando um endpoint está inativo.
+
+3. **Auth Interceptor:**
+   - Adiciona tokens de autenticação automaticamente aos cabeçalhos das requisições.
+   - Garante que somente requisições autenticadas sejam enviadas ao backend.
+
+4. **Cache Manager:**
+   - Armazena respostas frequentes para economizar recursos e melhorar a latência.
+   - Suporte a políticas como cache "time-to-live" (TTL).
+
+---
+
+### Fluxo de Comunicação
+
+#### **Comunicação Síncrona**
+1. O Micro Frontend (MFE) faz uma requisição HTTP ao Proxy usando `fetch` ou `axios`.
+2. O Auth Interceptor adiciona o token de autenticação à requisição.
+3. O Cache Manager verifica se a resposta está armazenada no cache.
+   - **Cache Hit:** Retorna a resposta diretamente.
+   - **Cache Miss:** Encaminha a requisição ao backend.
+4. O Circuit Breaker monitora falhas.
+5. O Proxy retorna a resposta ao MFE.
+
+#### **Comunicação Assíncrona**
+
+##### **1. Escutando um Evento**
+```javascript
+// Registrando um listener para eventos
+eventBus.on('USER_UPDATED', (payload) => {
+  console.log('Usuário atualizado:', payload);
+});
+```
+
+##### **2. Long Polling**
+```javascript
+const longPolling = async () => {
+  try {
+    const response = await fetch('http://proxy-url/long-poll', { method: 'GET' });
+    const data = await response.json();
+    console.log('Dados recebidos:', data);
+    longPolling(); // Continua escutando após receber dados
+  } catch (error) {
+    console.error('Erro no Long Polling:', error);
+    setTimeout(longPolling, 5000); // Tenta novamente após intervalo
+  }
+};
+
+longPolling();
+```
+
+##### **3. Publicação de Eventos**
+```javascript
+// Emitindo um evento
+eventBus.emit('COMBO_BOX_UPDATED', { selectedValue: 'Novo Valor' });
+```
+
+##### **4. Postagem de um Evento**
+```javascript
+const postEvent
+
+
+---
+
 ## Diagrama Geral da Arquitetura
 ```mermaid
 graph TD
